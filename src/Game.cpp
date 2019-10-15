@@ -20,27 +20,87 @@ void Game::init() {
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
 	//create buffers
+	const GLfloat position_buffer_data[] = {
+		-0.5f, -0.5f, -0.0f, // 0
+		0.5f, -0.5f, 0.0f, //1
+		0.5f, 0.5f, 0.0f, //2
+		-0.5f, 0.5f, 0.0f //3
+	};
+	const GLfloat texture_buffer_data[] = {
+		-0.0f, -0.0f, // 0
+		1.f, 0.f, //1
+		1.f,1.f, //2
+		0.f,1.f, //3
+	};
+
+	const GLuint index_buffer_data[] = {
+		0,1,2,
+		0,2,3
+	};
 
 	//send the data to OpenGL
 
 	//create and bind an OpenGL Vertex Array Object (VAO) i.e. a 'container' for all the data
 
+	glGenVertexArrays(1, &vao_);
+	glBindVertexArray(vao_);
+
 	//create and bind Vertex Buffer Objects (VBO) to store data on GPU
 
+	GLuint vbo; 
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	glBufferData(GL_ARRAY_BUFFER,
+		sizeof(position_buffer_data),
+		position_buffer_data,
+		GL_STATIC_DRAW // to make this static ause qe are not gping to change it
+	);
 	// 'Send' our data to OpenGL.
 
 	//tell OpenGL that this vertex array should have attribute id of '0' in shader
 
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, //attribute 0
+		3, //components (x,y,z)
+		GL_FLOAT,
+		GL_FALSE, 0, 0);
+
+	//textures
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	glBufferData(GL_ARRAY_BUFFER,
+		sizeof(texture_buffer_data),
+		texture_buffer_data,
+		GL_STATIC_DRAW // to make this static ause qe are not gping to change it
+	);
+	// 'Send' our data to OpenGL.
+
+	//tell OpenGL that this vertex array should have attribute id of '0' in shader
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, //attribute 1
+		2, //components (x,y,z)
+		GL_FLOAT,
+		GL_FALSE, 0, 0);
+
 	//do the same for the index buffer
 
-	//unbind buffers (optional)
+	GLuint ibo;
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+		sizeof(index_buffer_data),
+		index_buffer_data,
+		GL_STATIC_DRAW);
 
 
     //compile shader from relative path (note project settings, output directory is same as debug working directory)
 	shader_ = new Shader("data/shaders/simple.vert", "data/shaders/simple.frag");
 
 	//load texture
-	//texture_id_ = loadTexture("data/assets/test.tga");
+	texture_id_ = loadTexture("data/assets/test.tga");
 
 }
 //Entry point for game rendering code
@@ -50,11 +110,19 @@ void Game::update() {
 
 	//activate shader
 
+	glUseProgram(shader_->program);
+	GLint u_texture_diffuse = glGetUniformLocation(shader_->program, "u_texture_diffuse");
+	if (u_texture_diffuse != -1)
+		glUniform1i(u_texture_diffuse, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_id_);
 	//create matrices
 
 	//draw vao
+	glBindVertexArray(vao_);
 
 	//draw our geometry
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 }
 
